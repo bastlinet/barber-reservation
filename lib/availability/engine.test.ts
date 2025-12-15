@@ -44,6 +44,34 @@ describe("availability engine", () => {
     expect(starts).not.toContain(toUtc(`${BASE_DATE}T09:30:00`).toISOString());
   });
 
+  it("blocks slots that overlap confirmed bookings", () => {
+    const shifts = [
+      {
+        staffId: 1,
+        startAtUtc: toUtc(`${BASE_DATE}T09:00:00`),
+        endAtUtc: toUtc(`${BASE_DATE}T12:00:00`)
+      }
+    ];
+
+    const bookings = [
+      {
+        staffId: 1,
+        startAtUtc: toUtc(`${BASE_DATE}T09:30:00`),
+        endAtUtc: toUtc(`${BASE_DATE}T10:00:00`)
+      }
+    ];
+
+    const slots = buildSlotsFromSchedule({
+      ...BASE_PARAMS,
+      shifts,
+      bookings
+    });
+    const starts = slotStarts(slots);
+
+    expect(starts).toContain(toUtc(`${BASE_DATE}T09:00:00`).toISOString());
+    expect(starts).not.toContain(toUtc(`${BASE_DATE}T09:30:00`).toISOString());
+  });
+
   it("enforces buffer around holds", () => {
     const shifts = [
       {

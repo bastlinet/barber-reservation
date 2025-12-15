@@ -150,6 +150,16 @@ export async function listAvailableSlots(
     }
   });
 
+  const bookingRows = await prisma.booking.findMany({
+    where: {
+      branchId,
+      staffId: { in: targetStaffIds },
+      status: "CONFIRMED",
+      startAtUtc: { lt: dayRange.end },
+      endAtUtc: { gt: dayRange.start }
+    }
+  });
+
   const rawSlots = buildSlotsFromSchedule({
     dayStart: dayRange.start,
     dayEnd: dayRange.end,
@@ -167,6 +177,11 @@ export async function listAvailableSlots(
       endAtUtc: row.endAtUtc
     })),
     timeOff: timeOffRows.map((row) => ({
+      staffId: row.staffId,
+      startAtUtc: row.startAtUtc,
+      endAtUtc: row.endAtUtc
+    })),
+    bookings: bookingRows.map((row) => ({
       staffId: row.staffId,
       startAtUtc: row.startAtUtc,
       endAtUtc: row.endAtUtc
@@ -210,6 +225,7 @@ export interface BuildSlotsParams {
   breaks?: ScheduleInterval[];
   timeOff?: ScheduleInterval[];
   holds?: ScheduleInterval[];
+  bookings?: ScheduleInterval[];
 }
 
 interface RawSlot {
@@ -230,7 +246,8 @@ export function buildSlotsFromSchedule(
     shifts,
     breaks = [],
     timeOff = [],
-    holds = []
+    holds = [],
+    bookings = []
   } = params;
 
   if (dayEnd <= dayStart) {
@@ -250,6 +267,7 @@ export function buildSlotsFromSchedule(
   const breakMap = groupByStaff(breaks, range);
   const timeOffMap = groupByStaff(timeOff, range);
   const holdMap = groupByStaff(holds, range, bufferMin);
+  const bookingMap = groupByStaff(bookings, range, bufferMin);
 
   const stepMs = Math.max(1, slotStepMin) * 60 * 1000;
   const serviceMs = Math.max(1, serviceDurationMin) * 60 * 1000;
@@ -266,8 +284,12 @@ export function buildSlotsFromSchedule(
     }
 
     const holdsForStaff = holdMap.get(staffId) ?? [];
+    const bookingsForStaff = bookingMap.get(staffId) ?? [];
     if (holdsForStaff.length > 0 && availability.length > 0) {
       availability = subtractIntervals(availability, holdsForStaff);
+    }
+    if (bookingsForStaff.length > 0 && availability.length > 0) {
+      availability = subtractIntervals(availability, bookingsForStaff);
     }
 
     for (const interval of availability) {

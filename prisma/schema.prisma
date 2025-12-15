@@ -29,6 +29,7 @@ model Branch {
   shifts       Shift[]
   breaks       Break[]
   bookingHolds BookingHold[]
+  bookings     Booking[]
 }
 
 model Service {
@@ -42,6 +43,7 @@ model Service {
   branches      BranchService[]
   staffServices StaffService[]
   bookingHolds  BookingHold[]
+  bookings      Booking[]
 
   @@unique([name])
 }
@@ -59,6 +61,7 @@ model Staff {
   breaks    Break[]
   timeOff   TimeOff[]
   bookingHolds BookingHold[]
+  bookings  Booking[]
 
   @@unique([branchId, name])
 }
@@ -143,4 +146,31 @@ model BookingHold {
 
   @@index([staffId, startAtUtc])
   @@index([expiresAtUtc])
+}
+
+model Booking {
+  id           Int            @id @default(autoincrement())
+  branchId     Int
+  staffId      Int
+  serviceId    Int
+  startAtUtc   DateTime
+  endAtUtc     DateTime
+  status       BookingStatus  @default(CONFIRMED)
+  createdAt    DateTime       @default(now())
+  cancelledAt  DateTime?
+
+  branch  Branch  @relation(fields: [branchId], references: [id])
+  staff   Staff   @relation(fields: [staffId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+
+  @@index([staffId, startAtUtc])
+  @@index([branchId, startAtUtc])
+}
+
+enum BookingStatus {
+  HOLD
+  CONFIRMED
+  CANCELLED
+  NO_SHOW
+  COMPLETED
 }
