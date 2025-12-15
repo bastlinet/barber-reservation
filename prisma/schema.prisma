@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Branch {
+  id               Int             @id @default(autoincrement())
+  name             String
+  slug             String          @unique
+  address          String?
+  city             String?
+  lat              Float?
+  lng              Float?
+  phone            String?
+  email            String?
+  timezone         String
+  bookingBufferMin Int             @default(10)
+  slotStepMin      Int             @default(5)
+  maxDaysAhead     Int             @default(60)
+  allowPayOnSite   Boolean         @default(true)
+  allowPayOnline   Boolean         @default(true)
+
+  services BranchService[]
+  staff    Staff[]
+  shifts   Shift[]
+  breaks   Break[]
+}
+
+model Service {
+  id          Int             @id @default(autoincrement())
+  name        String
+  category    String
+  durationMin Int
+  description String?
+  active      Boolean         @default(true)
+
+  branches      BranchService[]
+  staffServices StaffService[]
+
+  @@unique([name])
+}
+
+model Staff {
+  id        Int             @id @default(autoincrement())
+  branchId  Int
+  name      String
+  active    Boolean         @default(true)
+  avatarUrl String?
+
+  branch    Branch          @relation(fields: [branchId], references: [id])
+  services  StaffService[]
+  shifts    Shift[]
+  breaks    Break[]
+  timeOff   TimeOff[]
+
+  @@unique([branchId, name])
+}
+
+model StaffService {
+  staffId   Int
+  serviceId Int
+  active    Boolean @default(true)
+
+  staff   Staff   @relation(fields: [staffId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+
+  @@id([staffId, serviceId])
+  @@index([serviceId])
+}
+
+model Shift {
+  id        Int      @id @default(autoincrement())
+  staffId   Int
+  branchId  Int
+  startAtUtc DateTime
+  endAtUtc   DateTime
+
+  staff  Staff  @relation(fields: [staffId], references: [id])
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@index([staffId, startAtUtc])
+}
+
+model Break {
+  id        Int      @id @default(autoincrement())
+  staffId   Int
+  branchId  Int
+  startAtUtc DateTime
+  endAtUtc   DateTime
+
+  staff  Staff  @relation(fields: [staffId], references: [id])
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@index([staffId, startAtUtc])
+}
+
+model TimeOff {
+  id        Int      @id @default(autoincrement())
+  staffId   Int
+  startAtUtc DateTime
+  endAtUtc   DateTime
+  reason    String?
+
+  staff Staff @relation(fields: [staffId], references: [id])
+
+  @@index([staffId, startAtUtc])
+}
+
+model BranchService {
+  branchId   Int
+  serviceId  Int
+  priceCents Int
+  active     Boolean @default(true)
+
+  branch Branch @relation(fields: [branchId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+
+  @@id([branchId, serviceId])
+  @@index([serviceId])
+}

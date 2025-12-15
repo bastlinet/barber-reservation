@@ -22,9 +22,9 @@ Nezkoumat celý repo. Pracuj v malých krocích.
 
 ## Repo structure (target)
 - /app
-  - /(public)  public pages (branch search, booking flow, voucher)
-  - /(admin)   admin pages (protected)
-  - /api       route handlers (availability, booking, voucher, stripe webhooks)
+  - /public  public pages (branch search, booking flow, voucher)
+  - /admin   admin pages (protected)
+  - /api     route handlers (availability, booking, voucher, stripe webhooks)
 - /lib
   - db.ts (Prisma)
   - time.ts (UTC/timezone helpers)
@@ -82,7 +82,7 @@ Test cases (must exist):
 ## Admin auth expectations
 - Only Google OAuth.
 - Allowlist admin emails (env var).
-- All /(admin) routes guarded server-side.
+- All /admin routes guarded server-side.
 
 ## Working style
 Když si nejsi jistý, udělej “best default”:
