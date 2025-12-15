@@ -32,6 +32,12 @@ Krůčky jsou malé, po každém kroku validuj (build/test) a drž invarianty z 
   - [ ] E2E průchod public booking + voucher redeem, test branch timezone edge cases.
   - [ ] Deploy skript (Vercel + DB), kontrola env/secrets.
 
+## Architecture review (aktuální stav)
+- Domain služby jsou oddělené v `/lib` (availability, booking), API vrstvy používají Zod, invariants drží UTC v DB a buffer/hold logiku – good.
+- Chybí druhá půlka plateb: PaymentIntent orchestrace + webhook idempotence pro booking/voucher (M5), voucher model + redeem tok (M6).
+- Time helper stojí na `date-fns-tz`; zkontrolovat, že API/DB vždy pracují v UTC a UI formáty používají branch timezone (časy v Reactu nesmí řešit logiku).
+- Backoffice guard (Google OAuth + allowlist) hotový, ale Stripe/Voucher env proměnné a deploy checklisty nejsou.
+
 ## UX/design zlepšení (běžící TODO)
 - [ ] Public booking: nahradit playground stepperem (branch/service/barber/slot), summary panel připravený pro voucher + platbu; “nejbližší slot” CTA, místní čas.
 - [ ] Admin bookings: agenda view se status chipy, filtry (dnes/zítra/víkend, status, search), výrazné lokální časy, inline no-show akce.

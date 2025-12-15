@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { fromZonedTime } from "date-fns-tz";
 import { buildSlotsFromSchedule, getDayRange } from "./engine";
+import { toUtc as toUtcFromLib } from "../time";
 
 const TIMEZONE = "Europe/Prague";
-const toUtc = (value: string) => fromZonedTime(value, TIMEZONE);
+const toUtc = (value: string) => toUtcFromLib(value, TIMEZONE);
 
 function slotStarts(slots: { start: number }[]) {
   return slots.map((slot) => new Date(slot.start).toISOString());
@@ -25,7 +25,7 @@ describe("availability engine", () => {
       {
         staffId: 1,
         startAtUtc: toUtc(`${BASE_DATE}T09:00:00`),
-        endAtUtc: toUtc(`${BASE_DATE}T12:00:00`)
+        endAtUtc: toUtc(`${BASE_DATE}T13:00:00`)
       }
     ];
 
@@ -77,7 +77,7 @@ describe("availability engine", () => {
       {
         staffId: 1,
         startAtUtc: toUtc(`${BASE_DATE}T09:00:00`),
-        endAtUtc: toUtc(`${BASE_DATE}T11:00:00`)
+        endAtUtc: toUtc(`${BASE_DATE}T12:00:00`)
       }
     ];
 
@@ -134,8 +134,8 @@ describe("availability engine", () => {
     const shifts = [
       {
         staffId: 2,
-        startAtUtc: fromZonedTime("2025-01-15T22:00:00", TIMEZONE),
-        endAtUtc: fromZonedTime("2025-01-16T02:00:00", TIMEZONE)
+        startAtUtc: toUtc("2025-01-15T22:00:00"),
+        endAtUtc: toUtc("2025-01-16T02:00:00")
       }
     ];
 
@@ -207,5 +207,34 @@ describe("availability engine", () => {
     expect(new Date(ordered[0].start).toISOString()).toBe(
       toUtc(`${BASE_DATE}T08:00:00`).toISOString()
     );
+  });
+
+  it("applies buffer around bookings when generating slots", () => {
+    const shifts = [
+      {
+        staffId: 1,
+        startAtUtc: toUtc(`${BASE_DATE}T09:00:00`),
+        endAtUtc: toUtc(`${BASE_DATE}T13:00:00`)
+      }
+    ];
+
+    const bookings = [
+      {
+        staffId: 1,
+        startAtUtc: toUtc(`${BASE_DATE}T10:00:00`),
+        endAtUtc: toUtc(`${BASE_DATE}T10:30:00`)
+      }
+    ];
+
+    const slots = buildSlotsFromSchedule({
+      ...BASE_PARAMS,
+      shifts,
+      bookings,
+      bufferMin: 10
+    });
+
+    const starts = slotStarts(slots);
+    expect(starts).not.toContain(toUtc(`${BASE_DATE}T09:30:00`).toISOString());
+    expect(starts).toContain(toUtc(`${BASE_DATE}T10:40:00`).toISOString());
   });
 });

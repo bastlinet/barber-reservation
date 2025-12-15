@@ -42,4 +42,17 @@ describe("booking conflict detection", () => {
 
     expect(conflictsWithExisting(candidate, existing, 0)).toBe(true);
   });
+
+  it("blocks slots that would end inside the buffer before an existing booking", () => {
+    const existing = [
+      { startAtUtc: toDate("2025-01-15T10:00:00Z"), endAtUtc: toDate("2025-01-15T10:30:00Z") }
+    ];
+
+    const candidate = {
+      startAtUtc: toDate("2025-01-15T09:30:00Z"),
+      endAtUtc: toDate("2025-01-15T09:55:00Z")
+    };
+
+    expect(conflictsWithExisting(candidate, existing, 10)).toBe(true);
+  });
 });
