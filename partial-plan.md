@@ -31,3 +31,7 @@ Krůčky jsou malé, po každém kroku validuj (build/test) a drž invarianty z 
 - [ ] QA + deploy
   - [ ] E2E průchod public booking + voucher redeem, test branch timezone edge cases.
   - [ ] Deploy skript (Vercel + DB), kontrola env/secrets.
+
+## UX/design zlepšení (běžící TODO)
+- [ ] Public booking: nahradit playground stepperem (branch/service/barber/slot), summary panel připravený pro voucher + platbu; “nejbližší slot” CTA, místní čas.
+- [ ] Admin bookings: agenda view se status chipy, filtry (dnes/zítra/víkend, status, search), výrazné lokální časy, inline no-show akce.

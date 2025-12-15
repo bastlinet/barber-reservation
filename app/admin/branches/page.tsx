@@ -159,121 +159,203 @@ export default function BranchesPage() {
   const defaultServiceId = useMemo(() => services[0]?.id, [services]);
 
   return (
-    <div>
-      <h1>Pobočky & služby</h1>
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div>
+        <h1 style={{ fontSize: "26px", marginBottom: "6px" }}>Pobočky & služby</h1>
+        <p style={{ color: "#475569" }}>
+          CRUD pro pobočky, služby a pricing per pobočka. Vstupy jsou kontrolované jen minimálně.
+        </p>
+      </div>
 
-      <section>
-        <h2>Vytvořit pobočku</h2>
-        <form onSubmit={handleCreateBranch}>
-          <label>
-            Název
-            <input name="name" type="text" defaultValue="Centrum" required />
-          </label>
-          <label>
-            Slug
-            <input name="slug" type="text" defaultValue="centrum" required />
-          </label>
-          <label>
-            Timezone
-            <input name="timezone" type="text" defaultValue="Europe/Prague" required />
-          </label>
-          <label>
-            Adresa
-            <input name="address" type="text" />
-          </label>
-          <label>
-            Město
-            <input name="city" type="text" />
-          </label>
-          <label>
-            Telefon
-            <input name="phone" type="tel" />
-          </label>
-          <label>
-            Email
-            <input name="email" type="email" />
-          </label>
-          <button type="submit">Uložit</button>
-        </form>
-        <p aria-live="polite">{branchMessage}</p>
-      </section>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          gap: "16px"
+        }}
+      >
+        <section
+          style={{
+            border: "1px solid #e2e8f0",
+            borderRadius: "14px",
+            padding: "16px",
+            background: "#fff",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+          }}
+        >
+          <h2 style={{ fontSize: "18px", marginBottom: "8px" }}>Vytvořit pobočku</h2>
+          <form
+            onSubmit={handleCreateBranch}
+            style={{ display: "grid", gap: "10px" }}
+          >
+            <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontWeight: 600 }}>Název</span>
+              <input name="name" type="text" defaultValue="Centrum" required />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontWeight: 600 }}>Slug</span>
+              <input name="slug" type="text" defaultValue="centrum" required />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontWeight: 600 }}>Timezone</span>
+              <input name="timezone" type="text" defaultValue="Europe/Prague" required />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontWeight: 600 }}>Adresa</span>
+              <input name="address" type="text" />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontWeight: 600 }}>Město</span>
+              <input name="city" type="text" />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontWeight: 600 }}>Telefon</span>
+              <input name="phone" type="tel" />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontWeight: 600 }}>Email</span>
+              <input name="email" type="email" />
+            </label>
+            <button type="submit" style={{ marginTop: "4px" }}>
+              Uložit
+            </button>
+          </form>
+          <p aria-live="polite" style={{ color: "#475569", marginTop: "6px" }}>
+            {branchMessage}
+          </p>
+        </section>
 
-      <section>
-        <h2>Vytvořit službu</h2>
-        <form onSubmit={handleCreateService}>
-          <label>
-            Název
-            <input name="name" type="text" defaultValue="Střih" required />
-          </label>
-          <label>
-            Kategorie
-            <input name="category" type="text" defaultValue="Vlasy" required />
-          </label>
-          <label>
-            Délka (min)
-            <input name="durationMin" type="number" defaultValue={30} required />
-          </label>
-          <label>
-            Popis
-            <textarea name="description" rows={2} />
-          </label>
-          <button type="submit">Uložit</button>
-        </form>
-        <p aria-live="polite">{serviceMessage}</p>
-      </section>
+        <section
+          style={{
+            border: "1px solid #e2e8f0",
+            borderRadius: "14px",
+            padding: "16px",
+            background: "#fff",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+          }}
+        >
+          <h2 style={{ fontSize: "18px", marginBottom: "8px" }}>Vytvořit službu</h2>
+          <form
+            onSubmit={handleCreateService}
+            style={{ display: "grid", gap: "10px" }}
+          >
+            <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontWeight: 600 }}>Název</span>
+              <input name="name" type="text" defaultValue="Střih" required />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontWeight: 600 }}>Kategorie</span>
+              <input name="category" type="text" defaultValue="Vlasy" required />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontWeight: 600 }}>Délka (min)</span>
+              <input name="durationMin" type="number" defaultValue={30} required />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontWeight: 600 }}>Popis</span>
+              <textarea name="description" rows={2} />
+            </label>
+            <button type="submit" style={{ marginTop: "4px" }}>
+              Uložit
+            </button>
+          </form>
+          <p aria-live="polite" style={{ color: "#475569", marginTop: "6px" }}>
+            {serviceMessage}
+          </p>
+        </section>
 
-      <section>
-        <h2>Napárovat službu na pobočku</h2>
-        <form onSubmit={handlePrice}>
-          <label>
-            Pobočka
-            <select name="branchId" defaultValue={defaultBranchId} required>
-              <option value="">-- vyber --</option>
+        <section
+          style={{
+            border: "1px solid #e2e8f0",
+            borderRadius: "14px",
+            padding: "16px",
+            background: "#fff",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+          }}
+        >
+          <h2 style={{ fontSize: "18px", marginBottom: "8px" }}>Napárovat službu na pobočku</h2>
+          <form
+            onSubmit={handlePrice}
+            style={{ display: "grid", gap: "10px" }}
+          >
+            <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontWeight: 600 }}>Pobočka</span>
+              <select name="branchId" defaultValue={defaultBranchId} required>
+                <option value="">-- vyber --</option>
+                {branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name} (slug {branch.slug})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontWeight: 600 }}>Služba</span>
+              <select name="serviceId" defaultValue={defaultServiceId} required>
+                <option value="">-- vyber --</option>
+                {services.map((service) => (
+                  <option key={service.id} value={service.id}>
+                    {service.name} ({service.durationMin} min)
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontWeight: 600 }}>Cena (cents)</span>
+              <input name="priceCents" type="number" defaultValue={1500} required />
+            </label>
+            <button type="submit" style={{ marginTop: "4px" }}>
+              Uložit
+            </button>
+          </form>
+          <p aria-live="polite" style={{ color: "#475569", marginTop: "6px" }}>
+            {priceMessage}
+          </p>
+        </section>
+      </div>
+
+      <section
+        style={{
+          border: "1px solid #e2e8f0",
+          borderRadius: "14px",
+          padding: "16px",
+          background: "#fff",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+        }}
+      >
+        <h2 style={{ fontSize: "18px", marginBottom: "8px" }}>Přehled</h2>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            gap: "12px"
+          }}
+        >
+          <div>
+            <h3 style={{ fontSize: "14px", textTransform: "uppercase", color: "#6b7280", letterSpacing: "0.04em" }}>
+              Pobočky
+            </h3>
+            <ul style={{ marginTop: "8px", paddingLeft: "18px", color: "#0f172a" }}>
               {branches.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name} (slug {branch.slug})
-                </option>
+                <li key={branch.id}>
+                  <strong>{branch.name}</strong> — slug {branch.slug}, tz {branch.timezone}
+                </li>
               ))}
-            </select>
-          </label>
-          <label>
-            Služba
-            <select name="serviceId" defaultValue={defaultServiceId} required>
-              <option value="">-- vyber --</option>
+            </ul>
+          </div>
+          <div>
+            <h3 style={{ fontSize: "14px", textTransform: "uppercase", color: "#6b7280", letterSpacing: "0.04em" }}>
+              Služby
+            </h3>
+            <ul style={{ marginTop: "8px", paddingLeft: "18px", color: "#0f172a" }}>
               {services.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {service.name} ({service.durationMin} min)
-                </option>
+                <li key={service.id}>
+                  <strong>{service.name}</strong> — {service.category}, {service.durationMin} min
+                </li>
               ))}
-            </select>
-          </label>
-          <label>
-            Cena (cents)
-            <input name="priceCents" type="number" defaultValue={1500} required />
-          </label>
-          <button type="submit">Uložit</button>
-        </form>
-        <p aria-live="polite">{priceMessage}</p>
-      </section>
-
-      <section>
-        <h2>Přehled</h2>
-        <h3>Pobočky</h3>
-        <ul>
-          {branches.map((branch) => (
-            <li key={branch.id}>
-              {branch.id}: {branch.name} (slug {branch.slug}, tz {branch.timezone})
-            </li>
-          ))}
-        </ul>
-        <h3>Služby</h3>
-        <ul>
-          {services.map((service) => (
-            <li key={service.id}>
-              {service.id}: {service.name} ({service.category}, {service.durationMin} min)
-            </li>
-          ))}
-        </ul>
+            </ul>
+          </div>
+        </div>
       </section>
     </div>
   );
