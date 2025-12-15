@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import prisma from "./db";
 import { fromUtc } from "./time";
 import { listAvailableSlots, AvailabilityError } from "./availability/engine";
+import type { PaymentStatus as PrismaPaymentStatus } from "@prisma/client";
 
 const HOLD_EXPIRATION_MIN = 10;
 const MIN_NAME_LENGTH = 2;
@@ -17,6 +18,8 @@ export class BookingError extends Error {
   }
 }
 
+export type PaymentStatus = PrismaPaymentStatus;
+
 export interface IntervalLike {
   startAtUtc: Date;
   endAtUtc: Date;
@@ -27,6 +30,7 @@ export interface CreateHoldParams {
   serviceId: number;
   staffId: number;
   startAtUtc: string;
+  paymentIntentId?: string;
   clientFingerprint?: string;
 }
 
@@ -46,6 +50,7 @@ export interface SerializedHold {
   startAtUtc: string;
   endAtUtc: string;
   expiresAtUtc: string;
+  paymentIntentId?: string | null;
 }
 
 export interface SerializedBooking {
@@ -60,6 +65,8 @@ export interface SerializedBooking {
   startAtUtc: string;
   endAtUtc: string;
   status: string;
+  paymentIntentId?: string | null;
+  paymentStatus: PaymentStatus;
 }
 
 const resendClient = process.env.RESEND_API_KEY
@@ -259,6 +266,7 @@ export async function createBookingHold(
         serviceId: params.serviceId,
         startAtUtc: startAt,
         endAtUtc: endAt,
+        paymentIntentId: params.paymentIntentId,
         clientFingerprint: params.clientFingerprint,
         expiresAtUtc: addMinutes(new Date(), HOLD_EXPIRATION_MIN)
       }
@@ -272,7 +280,8 @@ export async function createBookingHold(
     serviceId: hold.serviceId,
     startAtUtc: hold.startAtUtc.toISOString(),
     endAtUtc: hold.endAtUtc.toISOString(),
-    expiresAtUtc: hold.expiresAtUtc.toISOString()
+    expiresAtUtc: hold.expiresAtUtc.toISOString(),
+    paymentIntentId: hold.paymentIntentId ?? null
   };
 }
 
@@ -321,7 +330,9 @@ export async function confirmBooking(
         customerEmail: params.customerEmail,
         customerPhone: params.customerPhone,
         note: params.note,
-        status: "CONFIRMED"
+        status: "CONFIRMED",
+        paymentIntentId: hold.paymentIntentId,
+        paymentStatus: "NONE"
       }
     });
 
@@ -350,7 +361,9 @@ export async function confirmBooking(
     note: booking.note,
     startAtUtc: booking.startAtUtc.toISOString(),
     endAtUtc: booking.endAtUtc.toISOString(),
-    status: booking.status
+    status: booking.status,
+    paymentIntentId: booking.paymentIntentId ?? null,
+    paymentStatus: booking.paymentStatus
   };
 }
 

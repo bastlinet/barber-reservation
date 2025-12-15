@@ -138,6 +138,7 @@ model BookingHold {
   endAtUtc          DateTime
   expiresAtUtc      DateTime
   clientFingerprint String?
+  paymentIntentId   String?
   createdAt         DateTime @default(now())
 
   branch  Branch  @relation(fields: [branchId], references: [id])
@@ -160,6 +161,8 @@ model Booking {
   startAtUtc   DateTime
   endAtUtc     DateTime
   status       BookingStatus  @default(CONFIRMED)
+  paymentIntentId String?
+  paymentStatus   PaymentStatus @default(NONE)
   createdAt    DateTime       @default(now())
   cancelledAt  DateTime?
 
@@ -177,4 +180,12 @@ enum BookingStatus {
   CANCELLED
   NO_SHOW
   COMPLETED
+}
+
+enum PaymentStatus {
+  NONE
+  PENDING
+  PAID
+  FAILED
+  CANCELED
 }

@@ -19,6 +19,7 @@ Krůčky jsou malé, po každém kroku validuj (build/test) a drž invarianty z 
   - [x] Endpoint `/api/booking/hold` (transakce + expirace), `/api/booking/confirm` bez Stripe.
   - [x] Email potvrzení (Resend stub/template) + jednoduché public UI kroky rezervace.
 - [ ] M5: Stripe platby
+  - [x] Sledovat `paymentIntentId`/`paymentStatus` v holdu i bookingu a povolit payload
   - [ ] Integrovat PaymentIntent pro booking + voucher, ukládat payment_intent_id.
   - [ ] Webhook handler idempotentní; hold → booking na succeeded, failure/cancel update status.
 - [ ] M6: Vouchery
