@@ -15,9 +15,9 @@ Krůčky jsou malé, po každém kroku validuj (build/test) a drž invarianty z 
 - [x] M3: Availability engine
   - [x] Implementovat `listAvailableSlots` v /lib/availability + unit testy (overlap, buffer, break/timeoff, přes půlnoc, DST, any-staff).
   - [x] API `/api/availability` (Zod vstupy, UTC in/out), zahrnout booking_holds + confirmed bookings.
-- [ ] M4: Booking bez platby
-  - [ ] Endpoint `/api/booking/hold` (transakce + expirace), `/api/booking/confirm` bez Stripe.
-  - [ ] Email potvrzení (Resend stub/template) + jednoduché public UI kroky rezervace.
+- [x] M4: Booking bez platby
+  - [x] Endpoint `/api/booking/hold` (transakce + expirace), `/api/booking/confirm` bez Stripe.
+  - [x] Email potvrzení (Resend stub/template) + jednoduché public UI kroky rezervace.
 - [ ] M5: Stripe platby
   - [ ] Integrovat PaymentIntent pro booking + voucher, ukládat payment_intent_id.
   - [ ] Webhook handler idempotentní; hold → booking na succeeded, failure/cancel update status.

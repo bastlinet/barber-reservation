@@ -153,6 +153,10 @@ model Booking {
   branchId     Int
   staffId      Int
   serviceId    Int
+  customerName String
+  customerEmail String?
+  customerPhone String?
+  note         String?
   startAtUtc   DateTime
   endAtUtc     DateTime
   status       BookingStatus  @default(CONFIRMED)
