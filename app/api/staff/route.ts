@@ -1,6 +1,8 @@
 import { staffCreateSchema } from "../../../lib/validation/staff";
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/db";
+import { getServerSession } from "next-auth";
+import { authOptions, isEmailAllowed } from "../../../lib/auth/options";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,6 +56,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const session = await getServerSession(authOptions);
+  const email = session?.user?.email ?? null;
+
+  if (!email || !isEmailAllowed(email)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const payload = await request.json();
   const result = staffCreateSchema.parse(payload);
   const uniqueServiceIds = Array.from(new Set(result.serviceIds));

@@ -52,3 +52,7 @@ export const bookingConfirmSchema = z
       path: ["customerEmail"]
     }
   );
+
+export const bookingNoShowSchema = z.object({
+  bookingId: positiveInteger
+});
