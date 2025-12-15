@@ -13,8 +13,8 @@ Krůčky jsou malé, po každém kroku validuj (build/test) a drž invarianty z 
   - [x] Přidat staff/staff_services/shifts/breaks/time_off modely + migrace.
   - [x] Serverové validace (Zod) pro CRUD endpoints/actions, základní admin UI formy.
 - [ ] M3: Availability engine
-  - [ ] Implementovat `listAvailableSlots` v /lib/availability + unit testy (overlap, buffer, break/timeoff, přes půlnoc, DST, any-staff).
-  - [ ] API `/api/availability` (Zod vstupy, UTC in/out), zahrnout booking_holds.
+  - [x] Implementovat `listAvailableSlots` v /lib/availability + unit testy (overlap, buffer, break/timeoff, přes půlnoc, DST, any-staff).
+  - [x] API `/api/availability` (Zod vstupy, UTC in/out), zahrnout booking_holds.
 - [ ] M4: Booking bez platby
   - [ ] Endpoint `/api/booking/hold` (transakce + expirace), `/api/booking/confirm` bez Stripe.
   - [ ] Email potvrzení (Resend stub/template) + jednoduché public UI kroky rezervace.

@@ -24,10 +24,11 @@ model Branch {
   allowPayOnSite   Boolean         @default(true)
   allowPayOnline   Boolean         @default(true)
 
-  services BranchService[]
-  staff    Staff[]
-  shifts   Shift[]
-  breaks   Break[]
+  services     BranchService[]
+  staff        Staff[]
+  shifts       Shift[]
+  breaks       Break[]
+  bookingHolds BookingHold[]
 }
 
 model Service {
@@ -40,6 +41,7 @@ model Service {
 
   branches      BranchService[]
   staffServices StaffService[]
+  bookingHolds  BookingHold[]
 
   @@unique([name])
 }
@@ -56,6 +58,7 @@ model Staff {
   shifts    Shift[]
   breaks    Break[]
   timeOff   TimeOff[]
+  bookingHolds BookingHold[]
 
   @@unique([branchId, name])
 }
@@ -121,4 +124,23 @@ model BranchService {
 
   @@id([branchId, serviceId])
   @@index([serviceId])
+}
+
+model BookingHold {
+  id                Int      @id @default(autoincrement())
+  branchId          Int
+  staffId           Int
+  serviceId         Int
+  startAtUtc        DateTime
+  endAtUtc          DateTime
+  expiresAtUtc      DateTime
+  clientFingerprint String?
+  createdAt         DateTime @default(now())
+
+  branch  Branch  @relation(fields: [branchId], references: [id])
+  staff   Staff   @relation(fields: [staffId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+
+  @@index([staffId, startAtUtc])
+  @@index([expiresAtUtc])
 }
