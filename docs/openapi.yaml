@@ -1,0 +1,933 @@
+openapi: 3.0.3
+info:
+  title: Bastlinet Barber Reservation API
+  version: 1.0.0
+  description: |
+    Public HTTP surface that powers the barber reservation site and admin dashboard.
+    All stored timestamps are UTC and availability/booking invariants are enforced by
+    the business logic (no overlapping bookings, holds expire after ten minutes, any-staff
+    searches return the earliest eligible slot, etc.).
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: https://barber-reservation.local
+    description: Production (example)
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      description: Returns a simple readiness payload.
+      responses:
+        "200":
+          description: API reachable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /api/availability:
+    get:
+      summary: List available slots
+      description: |
+        Finds all UTC slots for the requested date, branch, service and optional staff.
+        `staffId=any` runs the "Any barber" flow and returns the earliest available slot for each staff.
+      parameters:
+        - $ref: "#/components/parameters/BranchIdRequired"
+        - $ref: "#/components/parameters/ServiceIdRequired"
+        - $ref: "#/components/parameters/StaffIdAnyOptional"
+        - $ref: "#/components/parameters/DateRequired"
+      responses:
+        "200":
+          description: Matching slots
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  slots:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AvailableSlot"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/booking/hold:
+    post:
+      summary: Create a hold for a slot
+      description: |
+        Validates availability (including buffer, holds and confirmed bookings) and stores a ten-minute hold.
+        Optionally accepts a `paymentIntentId` to keep the hold in lockstep with Stripe payments.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingHoldRequest"
+      responses:
+        "201":
+          description: Hold created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hold:
+                    $ref: "#/components/schemas/BookingHold"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+        "409":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/booking/confirm:
+    post:
+      summary: Confirm a hold as a booking
+      description: |
+        Requires either `customerEmail` or `customerPhone`. Removes the hold, creates the booking, and triggers
+        a confirmation email when an email address is present.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingConfirmRequest"
+      responses:
+        "200":
+          description: Booking confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  booking:
+                    $ref: "#/components/schemas/Booking"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+        "409":
+          $ref: "#/components/responses/ErrorResponse"
+        "410":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/branches:
+    get:
+      summary: List branches with pricing
+      description: Returns all active branches, each enumerating the currently active services and their prices.
+      responses:
+        "200":
+          description: Branch list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchListResponse"
+  /api/services:
+    get:
+      summary: List services (optionally scoped to a branch)
+      parameters:
+        - $ref: "#/components/parameters/BranchIdOptional"
+      responses:
+        "200":
+          description: Service catalog (when `branchId` is present, prices and branch references are included)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceListResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/staff:
+    get:
+      summary: Retrieve staff members
+      parameters:
+        - $ref: "#/components/parameters/BranchIdOptional"
+      responses:
+        "200":
+          description: Active staff with their services
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffListResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+    post:
+      summary: Create a staff member (admin-only)
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffCreateRequest"
+      responses:
+        "201":
+          description: Staff created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffCreateResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/staff/shifts:
+    post:
+      summary: Create a shift for a staff member
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffShiftRequest"
+      responses:
+        "201":
+          description: Shift persisted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffShiftResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/staff/time-off:
+    post:
+      summary: Record time off for a staff member
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffTimeOffRequest"
+      responses:
+        "201":
+          description: Time off saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffTimeOffResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/admin/bookings:
+    get:
+      summary: List bookings for a branch and date
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/AdminBranchId"
+        - $ref: "#/components/parameters/DateRequired"
+      responses:
+        "200":
+          description: Bookings for the day
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBookingListResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/admin/branches:
+    post:
+      summary: Create a branch
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminBranchCreateRequest"
+      responses:
+        "201":
+          description: Branch created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBranchCreateResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "409":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/admin/services:
+    post:
+      summary: Create a service
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminServiceCreateRequest"
+      responses:
+        "201":
+          description: Service created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminServiceCreateResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "409":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/admin/branch-services:
+    post:
+      summary: Publish or update a service price for a branch
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminBranchServiceRequest"
+      responses:
+        "200":
+          description: Branch service upserted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBranchServiceResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/auth/[...nextauth]:
+    get:
+      summary: NextAuth session/profile
+      description: Handles session lookups for the admin UI (Google OAuth + optional dev credentials).
+      responses:
+        "200":
+          description: Session payload
+        "401":
+          description: Unauthorized (invalid session or email not allow-listed)
+    post:
+      summary: NextAuth authentication callback
+      description: |
+        Proxy for Google OAuth or local credentials when `ADMIN_DEV_MODE` is enabled.
+      responses:
+        "200":
+          description: Authentication succeeded
+        "401":
+          description: Credentials missing/invalid or email not allow-listed
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+  parameters:
+    BranchIdRequired:
+      name: branchId
+      in: query
+      required: true
+      description: Branch identifier (positive integer)
+      schema:
+        type: integer
+        minimum: 1
+    BranchIdOptional:
+      name: branchId
+      in: query
+      required: false
+      description: Branch identifier when scoping request to a branch
+      schema:
+        type: integer
+        minimum: 1
+    ServiceIdRequired:
+      name: serviceId
+      in: query
+      required: true
+      description: Service identifier (positive integer)
+      schema:
+        type: integer
+        minimum: 1
+    StaffIdAnyOptional:
+      name: staffId
+      in: query
+      required: false
+      description: |
+        Either a positive staff id or the literal `any` to let the scheduler pick the earliest eligible barber.
+      schema:
+        type: string
+    DateRequired:
+      name: date
+      in: query
+      required: true
+      description: Local date in YYYY-MM-DD (branch timezone context applied server-side)
+      schema:
+        type: string
+        pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+    AdminBranchId:
+      name: branchId
+      in: query
+      required: true
+      description: Positive integer branch identifier (used by admin booking listings)
+      schema:
+        type: integer
+        minimum: 1
+  responses:
+    ErrorResponse:
+      description: Validation or business rule error, message explains the cause.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+    AvailableSlot:
+      type: object
+      properties:
+        startAtUtc:
+          type: string
+          format: date-time
+        endAtUtc:
+          type: string
+          format: date-time
+        staffId:
+          type: integer
+    BookingHoldRequest:
+      type: object
+      required:
+        - branchId
+        - serviceId
+        - staffId
+        - startAtUtc
+      properties:
+        branchId:
+          type: integer
+          minimum: 1
+        serviceId:
+          type: integer
+          minimum: 1
+        staffId:
+          type: integer
+          minimum: 1
+        startAtUtc:
+          type: string
+          format: date-time
+        clientFingerprint:
+          type: string
+          minLength: 6
+          maxLength: 200
+        paymentIntentId:
+          type: string
+          minLength: 5
+          maxLength: 200
+    BookingHold:
+      type: object
+      properties:
+        id:
+          type: integer
+        branchId:
+          type: integer
+        staffId:
+          type: integer
+        serviceId:
+          type: integer
+        startAtUtc:
+          type: string
+          format: date-time
+        endAtUtc:
+          type: string
+          format: date-time
+        expiresAtUtc:
+          type: string
+          format: date-time
+        paymentIntentId:
+          type: string
+          nullable: true
+    BookingConfirmRequest:
+      type: object
+      required:
+        - holdId
+        - customerName
+      properties:
+        holdId:
+          type: integer
+          minimum: 1
+        customerName:
+          type: string
+          minLength: 2
+          maxLength: 120
+        customerEmail:
+          type: string
+          format: email
+        customerPhone:
+          type: string
+          minLength: 5
+          maxLength: 50
+        note:
+          type: string
+          maxLength: 500
+      description: |
+        Either `customerEmail` or `customerPhone` must be provided.
+    Booking:
+      type: object
+      properties:
+        id:
+          type: integer
+        branchId:
+          type: integer
+        staffId:
+          type: integer
+        serviceId:
+          type: integer
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+          format: email
+          nullable: true
+        customerPhone:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
+        startAtUtc:
+          type: string
+          format: date-time
+        endAtUtc:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - HOLD
+            - CONFIRMED
+            - CANCELLED
+            - NO_SHOW
+            - COMPLETED
+        paymentIntentId:
+          type: string
+          nullable: true
+        paymentStatus:
+          type: string
+          enum:
+            - NONE
+            - PENDING
+            - PAID
+            - FAILED
+            - CANCELED
+    BranchServiceSummary:
+      type: object
+      properties:
+        branchId:
+          type: integer
+        serviceId:
+          type: integer
+        name:
+          type: string
+        category:
+          type: string
+        durationMin:
+          type: integer
+        priceCents:
+          type: integer
+    Branch:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        lat:
+          type: number
+          nullable: true
+        lng:
+          type: number
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        timezone:
+          type: string
+        bookingBufferMin:
+          type: integer
+        slotStepMin:
+          type: integer
+        maxDaysAhead:
+          type: integer
+        allowPayOnline:
+          type: boolean
+        allowPayOnSite:
+          type: boolean
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/BranchServiceSummary"
+    BranchListResponse:
+      type: object
+      properties:
+        branches:
+          type: array
+          items:
+            $ref: "#/components/schemas/Branch"
+    Service:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        category:
+          type: string
+        durationMin:
+          type: integer
+        description:
+          type: string
+          nullable: true
+    ServiceListResponse:
+      type: object
+      properties:
+        services:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/Service"
+              - $ref: "#/components/schemas/BranchServiceSummary"
+    StaffServiceSummary:
+      type: object
+      properties:
+        serviceId:
+          type: integer
+        name:
+          type: string
+        durationMin:
+          type: integer
+        category:
+          type: string
+    StaffMember:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        avatarUrl:
+          type: string
+          format: uri
+          nullable: true
+        branchId:
+          type: integer
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/StaffServiceSummary"
+    StaffListResponse:
+      type: object
+      properties:
+        staff:
+          type: array
+          items:
+            $ref: "#/components/schemas/StaffMember"
+    StaffCreateRequest:
+      type: object
+      required:
+        - branchId
+        - name
+        - serviceIds
+      properties:
+        branchId:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        avatarUrl:
+          type: string
+          format: uri
+        serviceIds:
+          type: array
+          minItems: 1
+          items:
+            type: integer
+            minimum: 1
+    StaffCreateResponse:
+      type: object
+      properties:
+        staff:
+          $ref: "#/components/schemas/StaffMember"
+    StaffShiftRequest:
+      type: object
+      required:
+        - staffId
+        - branchId
+        - startAtUtc
+        - endAtUtc
+      properties:
+        staffId:
+          type: integer
+          minimum: 1
+        branchId:
+          type: integer
+          minimum: 1
+        startAtUtc:
+          type: string
+          format: date-time
+        endAtUtc:
+          type: string
+          format: date-time
+    StaffShiftResponse:
+      type: object
+      properties:
+        shift:
+          type: object
+          properties:
+            id:
+              type: integer
+            staffId:
+              type: integer
+            branchId:
+              type: integer
+            startAtUtc:
+              type: string
+              format: date-time
+            endAtUtc:
+              type: string
+              format: date-time
+    StaffTimeOffRequest:
+      type: object
+      required:
+        - staffId
+        - startAtUtc
+        - endAtUtc
+      properties:
+        staffId:
+          type: integer
+        startAtUtc:
+          type: string
+          format: date-time
+        endAtUtc:
+          type: string
+          format: date-time
+        reason:
+          type: string
+          maxLength: 200
+    StaffTimeOffResponse:
+      type: object
+      properties:
+        timeOff:
+          type: object
+          properties:
+            id:
+              type: integer
+            staffId:
+              type: integer
+            startAtUtc:
+              type: string
+              format: date-time
+            endAtUtc:
+              type: string
+              format: date-time
+            reason:
+              type: string
+              nullable: true
+    AdminBranchCreateRequest:
+      type: object
+      required:
+        - name
+        - slug
+        - timezone
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        slug:
+          type: string
+          pattern: "^[a-z0-9-]+$"
+          minLength: 2
+          maxLength: 120
+        timezone:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        bookingBufferMin:
+          type: integer
+          minimum: 0
+        slotStepMin:
+          type: integer
+          minimum: 1
+        maxDaysAhead:
+          type: integer
+          minimum: 0
+        allowPayOnSite:
+          type: boolean
+        allowPayOnline:
+          type: boolean
+    AdminBranchCreateResponse:
+      type: object
+      properties:
+        branch:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            slug:
+              type: string
+            timezone:
+              type: string
+    AdminServiceCreateRequest:
+      type: object
+      required:
+        - name
+        - category
+        - durationMin
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        category:
+          type: string
+          minLength: 2
+          maxLength: 120
+        durationMin:
+          type: integer
+          minimum: 1
+        description:
+          type: string
+          maxLength: 500
+    AdminServiceCreateResponse:
+      type: object
+      properties:
+        service:
+          $ref: "#/components/schemas/Service"
+    AdminBranchServiceRequest:
+      type: object
+      required:
+        - branchId
+        - serviceId
+        - priceCents
+      properties:
+        branchId:
+          type: integer
+          minimum: 1
+        serviceId:
+          type: integer
+          minimum: 1
+        priceCents:
+          type: integer
+          minimum: 1
+    AdminBranchServiceResponse:
+      type: object
+      properties:
+        branchService:
+          type: object
+          properties:
+            branchId:
+              type: integer
+            serviceId:
+              type: integer
+            priceCents:
+              type: integer
+            active:
+              type: boolean
+    AdminBookingListResponse:
+      type: object
+      properties:
+        branch:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            timezone:
+              type: string
+        bookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminBooking"
+    AdminBooking:
+      type: object
+      properties:
+        id:
+          type: integer
+        branchId:
+          type: integer
+        staffId:
+          type: integer
+        staffName:
+          type: string
+        serviceId:
+          type: integer
+        serviceName:
+          type: string
+        customerName:
+          type: string
+        startAtUtc:
+          type: string
+          format: date-time
+        endAtUtc:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - HOLD
+            - CONFIRMED
+            - CANCELLED
+            - NO_SHOW
+            - COMPLETED
+        paymentStatus:
+          type: string
+          enum:
+            - NONE
+            - PENDING
+            - PAID
+            - FAILED
+            - CANCELED
+    ErrorBody:
+      type: object
+      properties:
+        error:
+          type: string
